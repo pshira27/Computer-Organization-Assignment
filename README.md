@@ -1,6 +1,8 @@
 # Computer-Organization-Assignment
 Computer Organization Assignment : CE-KMITL 2/2017
 
+This Code project is runable on DOS-box with TASM compiler
+
 Assignment 2 -> Fill 'O' Char
 
 Assignment 3 -> The Matrix-Screen
