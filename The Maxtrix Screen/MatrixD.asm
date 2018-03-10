@@ -1,11 +1,11 @@
     .model  tiny
 	
 	.data
-	char	db	80	dup (0)
+	char		db	80	dup (0)
 	row		db	80	dup	(0)
-	column	db	80	dup (0)
+	column		db	80	dup (0)
 	len		db	80	dup (10)
-	leni	db	?	
+	leni		db	?	
 	
 	ex		db	1
 	i		dw	?
@@ -15,7 +15,7 @@
 	seed80	db 	?
 	seed94	db 	?
 	temp 	dw	?
-	count	db  ?
+	count	db  	?
 
     .code
     org     0100h
@@ -26,8 +26,8 @@ main:
 	mov		seed, dl
 	
 	mov     ah, 00h         ; Set to 80x25
-    mov     al, 03h
-    int     10h
+    	mov     al, 03h
+   	 int     10h
 	
 	mov  	ch, 32   		; Hide cursor on screen
 	mov  	ah, 1
@@ -42,24 +42,24 @@ main:
 	int 	10h
 	
 	MOV    ah, 00h          ; get system time as seed of seed94
-    INT    1Ah
-    MOV    seed94, dl
+    	INT    1Ah
+    	MOV    seed94, dl
 	
 	MOV    ah, 00h          ; get system time as seed of seed80
-    INT    1Ah
-    MOV    seed80, dl
+    	INT    1Ah
+    	MOV    seed80, dl
 
 start1:
 	mov		i, 0
 lp:	
 	mov		temp, ax
-	call	newJ
+	call		newJ
 	mov		ax, temp
 	
-	call	setpos
-	call	randLen
-	call 	randRow
-	call	randCol
+	call		setpos
+	call		randLen
+	call 		randRow
+	call		randCol
 
 	inc		i
 	cmp		i, 40
@@ -72,38 +72,37 @@ lp2:					; print
 	call	setpos
 	call	getChar		; Get random char & print 1 time
 	call 	printWhite
-	inc		i			; move to next index of array
-	cmp		i, 40		; check i < 40 ?
-	jl		lp2
+	inc	i			; move to next index of array
+	cmp	i, 40		; check i < 40 ?
+	jl	lp2
 	
 	call 	delay
 	
-	mov		i, 0		; reset i 
+	mov	i, 0		; reset i 
 lp3:
 	call	setpos
 	call 	moveDown
 	call 	printBlack	; clear char with random len
-	inc		i
+	inc	i
 	call	setpos
-	cmp		[row + di], 40
-	jl		nxt
+	cmp	[row + di], 40
+	jl	nxt
 	call	newLine
 nxt:
-	cmp		i, 40
-	jl		lp3
+	cmp	i, 40
+	jl	lp3
 
 	
-	cmp		ex, 0		; Infinite loop until ex turn to 1
-	jne		loopInf
-	jmp		endMain
-
+	cmp	ex, 0		; Infinite loop until ex turn to 1
+	jne	loopInf
+	jmp	endMain
 ;------------------------- End Loop ------------------------------
 	
 	; Function Zone
 newLine:
-	mov		temp, ax
+	mov	temp, ax
 	call	newJ
-	mov		ax, temp
+	mov	ax, temp
 	
 	call	setpos
 	call	randLen
