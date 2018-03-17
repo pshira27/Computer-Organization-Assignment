@@ -39,7 +39,10 @@
 	hp			db	10			; Start HP = 10
 	score		db	0			; Start Score = 0
 	
-	i			dw	0
+	c			dw	?
+	i			dw	?
+	j			db	?
+	ex			db	?
 	count		db	0
 	keyin		db	0
 	
@@ -57,22 +60,41 @@ main:
 	call	hideCursor
 	call	getSeed
 	
+	mov		ex, 1
 	mov		count, 0			; Start Round 0
 	mov		i, 0				; index of array
 	mov		di, i				; and store in di 
-;	call	getStart			; Get start variable for game
+	call	getStart			; Get start variable for game
 	
 gameloop:						; Game Processing
+	mov		i, 0
+	
+ploop:
 	call	checkKey
+	mov		di, i
+	call	printChar
+	inc		[row + di]
 	
+	cmp		[row + di], 30
+	jl		gonxt
 	
-	mov		keyin, 0			; clear keyin b4 loop
-	jmp		gameloop
+	dec		hp
+	call	delLine
+	call	newLine
 	
+gonxt:	
+	inc		i
+	cmp		i, 1
+	jl		ploop
+	
+	call	delayinit
+	cmp		hp, 0
+	jne		gameloop
+	jmp		endMain
 	
 ;//////////////// Function Zone Start ////////////////
 ;//////////////// System Function ////////////////
-deleyinit:						; delay FN
+delayinit:						; delay FN
 	mov		ah, 86h
 	mov		cx, 1
 	mov		dx, 40h
@@ -97,38 +119,80 @@ hideCursor:
 checkKey:
 	mov		ah, 01h
 	int 	16h
-	jz		ctrl1				; is buffer clear ? no getchar
+	jz		rp2					; is buffer clear ? no getchar
 	mov		ah, 00h				; getchar
 	int		16h	
 	mov		keyin, al			; store in keyin
+	
 	cmp		al, 27				; is keyin ESC ? yes end the game
 	je		escf
-	ctrl1:						; buffer is clear do not thing
-	ret
+	jne		rp1
+	rp1:
+	mov		c, 0
+	rpp:
+	mov		di, c
+	cmp		[char + di], al
+	jne		rp3
+	call	incScore
+	call	delLine
+	call	newLine
+	rp3:
+	inc		c
+	cmp		c, 10
+	jl		rpp
+	jmp		rp2
 	escf:
 	jmp		endMain
+	rp2:
+	ret
 	
 getSeed:
 	mov		ah, 00h
 	int		1Ah
 	mov		seed, dl
-	call	deleyinit
+	call	delayinit
 	mov		ah, 00h
 	int		1Ah
 	mov		seed80, dl
-	call	deleyinit
+	call	delayinit
 	mov		ah, 00h
 	int		1Ah
 	mov		seed94, dl
-	call	deleyinit
+	call	delayinit
 	ret
 	
 getStart:
 	mov		i, 0
 	for1:
-	
+	mov		di, i
+	call	randChar
+	call	randColumn
+	inc		i
 	cmp		i, 10
 	jl		for1
+	ret
+	
+newLine:
+	mov		[row + di], 0
+	call	randChar
+	call	randColumn
+	ret
+	
+delLine:
+	mov		j, 0
+	jloop:
+	mov		dh, j
+	mov		dl, [column + di]
+	call	setpos
+	call	printBlack
+	inc		j
+	cmp		j, 30
+	jl		jloop
+	ret
+	
+setpos:
+	mov		ah, 02h
+	int		10h
 	ret
 	
 ;//////////// Random Function //////////////
@@ -138,10 +202,10 @@ randChar:
 	mov		cx, 95
 	mul		cx
 	add		ax, 17
-	mov		cx, 94
+	mov		cx, 26
 	xor		dx, dx
 	div		cx
-	add		dl, 33
+	add		dl, 97
 	mov		seed94, dl		
 	mov		[char + di], dl
 	ret 
@@ -152,7 +216,7 @@ randColumn:
 	mov		cx, 81
 	mul		cx
 	add		ax, 17
-	mov		cx, 80
+	mov		cx, 65
 	xor		dx, dx
 	div		cx
 	mov		seed80, dl
@@ -160,16 +224,37 @@ randColumn:
 	ret
 
 ;//////////// Print-Display Function //////////////
-printChar:						; check keyin
-	mov		dh, [row + di]
+printChar:			
+	mov		di, i
+	mov		dh, [row + di]		; set pos
 	mov		dl, [column + di]
+	mov		ah, 02h
+	int		10h
+	
 	mov		al, [char + di]
 	call	printWhite
 	call	printGray
 	call	printGreen
+	call	printGreen
+	call	printGreen
+	call	printGreen
+	call	printGreen
+	call	printGreen
+	call	printGreen
+	dec		dh
+	call	printBlack
+	ret
+	
+printBlack:						; print black at pos
+	call	setpos
+	mov		bl, 00h
+	mov		cx, 01h
+	mov		ah, 09h
+	int		10h
 	ret
 
 printWhite:						; print white at pos
+	call	setpos
 	mov		bl, 0Fh
 	mov		cx, 01h
 	mov		ah, 09h
@@ -178,6 +263,7 @@ printWhite:						; print white at pos
 
 printGray:						; update pos row-- and print gray at pos
 	dec		dh
+	call	setpos
 	mov		bl, 07H
 	mov		cx, 01h
 	mov		ah, 09h
@@ -186,7 +272,8 @@ printGray:						; update pos row-- and print gray at pos
 	
 printGreen:						; update pos row-- and print green at pos
 	dec		dh
-	mov		bl, 07H
+	call	setpos
+	mov		bl, 02h
 	mov		cx, 01h
 	mov		ah, 09h
 	int		10h
@@ -195,14 +282,16 @@ printGreen:						; update pos row-- and print green at pos
 ;//////////// Game Logic Function //////////////
 decHP:
 	dec		hp
-	cmp		hp, 0				; Check hp == 0 ?
-	jg		alive				; no ? still alive :D 
-	jmp		gameOver			; yes ... aw gameover
-	alive:
+	cmp		hp, 0
+	je		endMain
 	ret
-
+	
+incScore:
+	add		score, al
+	ret
+	
 gameOver:
-	ret
+	jmp		endMain
 	
 ;//////////// End Program //////////////
 endMain:

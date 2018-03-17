@@ -1,0 +1,11 @@
++ Playable with 1 line dropping
++ HP dec is working
++ Score is counting !
+
+- Only 1 line worked
+- No srceen showing HP/Score
+
+---- On Working ----
+> Mode select
+> Sound playing
+> Welcome text and srceening
