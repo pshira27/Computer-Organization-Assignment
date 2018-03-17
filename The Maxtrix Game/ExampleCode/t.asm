@@ -5,43 +5,17 @@
 	easyMode	dw	04h
 	normalMode	dw	02h
 	hardMode	dw	01h
-	
-;//////////////// Screening ////////////////
-	endProgram	db 'End of Program $', 0
-;				   '0         1         2         3         4         5         6         7         '
-;                  '01234567890123456789012345678901234567890123456789012345678901234567890123456789'
-	titleScreen	db '     _|_|      _|_|   _|_|   _|      _| _|_|_|_|_| _|_|_|   _| _|      _|       ', 0
-				db '     _|  _|  _|  _| _|    _|   _|  _|       _|     _|    _| _|   _|  _|         ', 0
-				db '     _|  _|  _|  _| _|_|_|_|     _|         _|     _|_|_|   _|     _|           ', 0
-				db '     _|    _|    _| _|    _|   _|  _|       _|     _|    _| _|   _|  _|         ', 0
-				db '     _|    _|    _| _|    _| _|      _|     _|     _|    _| _| _|      _|       ', 0
-				db '                                                                                ', 0
-				db '       _|_|_| _|_|_|                                                            ', 0
-				db '       _|  _| _|                                                                ', 0
-				db '       _|_|_| _|_|_|                                                            ', 0
-				db '       _|     _|                                                                ', 0
-				db '       _|     _|_|_|                                                            ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                ', 0
-				db '                                                                                 $', 0
 
 ;//////////////// Variable /////////////////
 	row			db	10 	dup (-1)
 	column		db	10	dup	(-1)
 	char		db	10  dup	(0)
 	
-	hp			db	10			; Start HP = 10
+	hp			db	0			; Start HP = 10
 	score		db	0			; Start Score = 0
 	
-	c			dw	?
 	i			dw	?
-	j			db	?
+	j			dw	?
 	ex			db	?
 	count		db	0
 	keyin		db	0
@@ -67,34 +41,18 @@ main:
 	call	getStart			; Get start variable for game
 	
 gameloop:						; Game Processing
-	mov		i, 0
-	
-ploop:
-	call	checkKey
-	mov		di, i
-	call	printChar
-	inc		[row + di]
-	
-	cmp		[row + di], 30
-	jl		gonxt
-	
-	dec		hp
-	call	delLine
-	call	newLine
-	
-gonxt:	
-	inc		i
-	cmp		i, 1
-	jl		ploop
-	
-	call	delayinit
-	cmp		hp, 0
+	mov		al, hp
+	add		al, 'A'
+	call	printWhite
+	inc		hp
+	cmp		hp, 26
 	jne		gameloop
-	jmp		endMain
+	jmp		endProgram
+	
 	
 ;//////////////// Function Zone Start ////////////////
 ;//////////////// System Function ////////////////
-delayinit:						; delay FN
+deleyinit:						; delay FN
 	mov		ah, 86h
 	mov		cx, 1
 	mov		dx, 40h
@@ -119,46 +77,46 @@ hideCursor:
 checkKey:
 	mov		ah, 01h
 	int 	16h
-	jz		rp2					; is buffer clear ? no getchar
+	jz		ctrl1				; is buffer clear ? no getchar
 	mov		ah, 00h				; getchar
 	int		16h	
 	mov		keyin, al			; store in keyin
 	
 	cmp		al, 27				; is keyin ESC ? yes end the game
 	je		escf
-	jne		rp1
-	rp1:
-	mov		c, 0
-	rpp:
-	mov		di, c
-	cmp		[char + di], al
-	jne		rp3
-	call	incScore
+	
+	mov		i, 0
+	cloop:
+	mov		di, i
+	mov		al, keyin
+	cmp		[char + di], al		; is keyin ==
+	je		ctrl2
+	jne		ctrl1
+	ctrl2:
 	call	delLine
 	call	newLine
-	rp3:
-	inc		c
-	cmp		c, 10
-	jl		rpp
-	jmp		rp2
+	ctrl1:						; buffer is clear do not thing
+	inc		i
+	cmp		i, 10
+	jl		cloop
+	ret
+	
 	escf:
 	jmp		endMain
-	rp2:
-	ret
 	
 getSeed:
 	mov		ah, 00h
 	int		1Ah
 	mov		seed, dl
-	call	delayinit
+	call	deleyinit
 	mov		ah, 00h
 	int		1Ah
 	mov		seed80, dl
-	call	delayinit
+	call	deleyinit
 	mov		ah, 00h
 	int		1Ah
 	mov		seed94, dl
-	call	delayinit
+	call	deleyinit
 	ret
 	
 getStart:
@@ -280,16 +238,6 @@ printGreen:						; update pos row-- and print green at pos
 	ret
 	
 ;//////////// Game Logic Function //////////////
-decHP:
-	dec		hp
-	cmp		hp, 0
-	je		endMain
-	ret
-	
-incScore:
-	add		score, al
-	ret
-	
 gameOver:
 	jmp		endMain
 	
