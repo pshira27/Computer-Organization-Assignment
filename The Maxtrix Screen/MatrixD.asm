@@ -148,6 +148,7 @@ randRow:							; random start row
 	div		cx
 	sub		dl, 15
 	mov		seed10, dl
+	sub		dl, 40
 	mov		[row + di], dl
 	mov		dh, [row + di]
 	mov		dl, [column + di]
